@@ -6,5 +6,6 @@ const handle = {};
 handle["/"] = handlers.start;
 handle["/start"] = handlers.start;
 handle["/upload"] = handlers.upload;
+handle["/show"] = handlers.show;
 
 server.start(routes.route, handle);

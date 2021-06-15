@@ -4,11 +4,15 @@ const url = require("url");
 function start(route, handle) {
   function onRequest(req, res) {
     const pathname = url.parse(req.url).pathname;
-    // console.log("Request received:", pathname);
-    route(handle, pathname, res);
-    // res.writeHead(200, ["Content-Type", "text/plain"]);
-    // res.write("Hello World!");
-    // res.end();
+    let data = "";
+    req.setEncoding("utf8");
+    req.addListener("data", function (chunk) {
+      data += chunk;
+      console.log("Received data chunk:", chunk);
+    });
+    req.addListener("end", function () {
+      route(handle, pathname, res, data);
+    });
   }
 
   http.createServer(onRequest).listen(8888);
