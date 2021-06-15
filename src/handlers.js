@@ -2,20 +2,22 @@ const querystring = require("querystring");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const formidable = require("formidable");
 
-function start(response, postData) {
+function start(request, response) {
   console.log("Request handler 'start' was called.");
 
-  var body =
+  const body =
     "<html>" +
     "<head>" +
     '<meta http-equiv="Content-Type" ' +
     'content="text/html; charset=UTF-8" />' +
     "</head>" +
     "<body>" +
-    '<form action="/upload" method="post">' +
-    '<textarea name="text" rows="20" cols="60"></textarea>' +
-    '<input type="submit" value="Submit text" />' +
+    '<form action="/upload" enctype="multipart/form-data" ' +
+    'method="post">' +
+    '<input type="file" name="upload">' +
+    '<input type="submit" value="Upload file" />' +
     "</form>" +
     "</body>" +
     "</html>";
@@ -25,14 +27,27 @@ function start(response, postData) {
   response.end();
 }
 
-function upload(response, postData) {
-  console.log("Request handler 'upload' was called.");
-  response.writeHead(200, { "Content-Type": "text/plain" });
-  response.write("You've sent the text: " + querystring.parse(postData).text);
-  response.end();
+function upload(request, response) {
+  console.log("Request handler 'upload' was called.", request.method);
+  if (request.method != "POST") {
+    response.writeHead(400, { "Content-Type": "text/plain" });
+    response.write("Bad Request: only POST allowed!");
+    response.end();
+    return;
+  }
+  const form = new formidable.IncomingForm();
+  console.log("about to parse");
+  form.parse(request, function (error, fields, files) {
+    console.log("parsing done", files.upload.path);
+    fs.renameSync(files.upload.path, path.join(os.tmpdir(), "test.png"));
+    response.writeHead(200, { "Content-Type": "text/html" });
+    response.write("Received image:<br/>");
+    response.write("<img src='/show' height='400' width='300'/>");
+    response.end();
+  });
 }
 
-function show(response, postData) {
+function show(request, response) {
   console.log("Request handler 'show' was called.");
   fs.readFile(
     path.join(os.tmpdir(), "test.png"),
